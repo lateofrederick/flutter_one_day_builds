@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:timer/components/circular_painter.dart';
 
 class Timer extends StatefulWidget {
+  final Duration _time;
+  Timer(this._time);
+
   @override
   _TimerState createState() => _TimerState();
 }
@@ -13,12 +16,12 @@ class _TimerState extends State<Timer> with TickerProviderStateMixin {
   void initState() {
     super.initState();
     _controller =
-        AnimationController(vsync: this, duration: Duration(seconds: 60));
+        AnimationController(vsync: this, duration: Duration(seconds: widget._time.inSeconds));
   }
 
   String get formattedTime {
     Duration duration = _controller.duration * _controller.value;
-    return "${duration.inMinutes}:${(duration.inSeconds % 60).toString().padLeft(2, "0")}";
+    return "${duration.inHours}:${duration.inMinutes % 60}:${(duration.inSeconds % 60).toString().padLeft(2, "0")}";
   }
 
   bool _isAnimating = true;
