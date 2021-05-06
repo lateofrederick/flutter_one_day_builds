@@ -8,7 +8,8 @@ class SetTimer extends StatefulWidget {
 }
 
 class _SetTimerState extends State<SetTimer> {
-  Duration _time;
+  Duration _time = Duration();
+  final initialTime = "0:00:00.000000";
 
   @override
   Widget build(BuildContext context) {
@@ -40,17 +41,9 @@ class _SetTimerState extends State<SetTimer> {
               height: 50.0,
               child: ElevatedButton(
                 child: Text("start"),
-                onPressed: () {
-                  print("===============");
-                  print(_time);
-                  print("===============");
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => Timer(_time))
-                  );
-                },
+                onPressed: _navigateToCountdownTimer,
                 style: ElevatedButton.styleFrom(
-                    primary: Colors.green,
+                    primary: _time.toString() != initialTime ? Colors.green: Colors.grey,
                     textStyle: TextStyle(fontSize: 28.0)),
               ),
             ),
@@ -59,5 +52,17 @@ class _SetTimerState extends State<SetTimer> {
         ],
       ),
     );
+  }
+
+  // function to navigate to timer page when the time has been
+  void _navigateToCountdownTimer() {
+    if (_time.toString() != initialTime) {
+        Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => Timer(_time))
+        );
+    } else {
+      return null;
+    }
   }
 }
