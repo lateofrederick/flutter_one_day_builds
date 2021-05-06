@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:timer/components/circular_painter.dart';
+import 'package:timer/components/set_timer.dart';
+import 'package:timer/services/cache.dart';
 
 class Timer extends StatefulWidget {
   final Duration _time;
@@ -9,18 +12,21 @@ class Timer extends StatefulWidget {
   _TimerState createState() => _TimerState();
 }
 
-class _TimerState extends State<Timer> with TickerProviderStateMixin {
+class _TimerState extends State<Timer> with TickerProviderStateMixin, WidgetsBindingObserver {
   AnimationController _controller;
-
+  Cache cache = Cache();
+  Duration duration;
   @override
   void initState() {
     super.initState();
-    _controller =
-        AnimationController(vsync: this, duration: Duration(seconds: widget._time.inSeconds));
+    _controller = AnimationController(
+        vsync: this, duration: Duration(seconds: widget._time.inSeconds));
+    WidgetsBinding.instance.addObserver(this);
+    _controller.reverse(from: 1.0);
   }
 
   String get formattedTime {
-    Duration duration = _controller.duration * _controller.value;
+    duration = _controller.duration * _controller.value;
     return "${duration.inHours}:${duration.inMinutes % 60}:${(duration.inSeconds % 60).toString().padLeft(2, "0")}";
   }
 
@@ -47,7 +53,7 @@ class _TimerState extends State<Timer> with TickerProviderStateMixin {
                         animation: _controller,
                         builder: (context, child) => CustomPaint(
                           painter: CircularPainter(
-                              _controller, Colors.blue, Colors.white),
+                              _controller,  Colors.white, Colors.white,),
                         ),
                       )),
                       Align(
@@ -71,33 +77,76 @@ class _TimerState extends State<Timer> with TickerProviderStateMixin {
                   ),
                 ),
               )),
-              AnimatedBuilder(
-                  animation: _controller,
-                  builder: (context, child) {
-                    return FloatingActionButton.extended(
-                        onPressed: () {
-                          if (_controller.isAnimating) {
-                            _controller.stop();
-                            setState(() {
-                              _isAnimating = !_isAnimating;
-                            });
-                          } else {
-                            _controller.reverse(
-                                from: _controller.value == 0.0
-                                    ? 1.0
-                                    : _controller.value);
-                          }
-                        },
-                        icon: Icon((_controller.isAnimating && _isAnimating) || (_controller.isAnimating)
-                            ? Icons.pause
-                            : Icons.play_arrow),
-                        label:
-                            Text(_controller.isAnimating ? "Pause" : "Play"));
-                  }),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  AnimatedBuilder(
+                      animation: _controller,
+                      builder: (context, child) {
+                        return FloatingActionButton.extended(
+                            heroTag: "btn1",
+                            backgroundColor: Colors.green,
+                            onPressed: () {
+                              if (_controller.isAnimating) {
+                                _controller.stop();
+                                setState(() {
+                                  _isAnimating = !_isAnimating;
+                                });
+                              } else {
+                                _controller.reverse(
+                                  
+                                    from: _controller.value == 0.0
+                                        ? 1.0
+                                        : _controller.value
+                                );
+                              }
+                            },
+                            icon: Icon(
+                                (_controller.isAnimating && _isAnimating) ||
+                                        (_controller.isAnimating)
+                                    ? Icons.pause
+                                    : Icons.play_arrow),
+                            label: Text(
+                                _controller.isAnimating ? "Pause" : "Play"));
+                      }),
+                  FloatingActionButton.extended(
+                    heroTag: "btn2",
+                    backgroundColor: Colors.green,
+                      onPressed: () {
+                      cache.clearLocalStorage();
+                        Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => SetTimer()));
+                      },
+                      label: Text("Cancel"))
+                ],
+              ),
             ],
           ),
         ),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    switch (state) {
+      case AppLifecycleState.paused:
+        cache.saveTime(formattedTime);
+        break;
+      case AppLifecycleState.detached:
+        cache.saveTime(formattedTime);
+        break;
+      default:
+        break;
+    }
   }
 }
